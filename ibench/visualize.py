@@ -1,6 +1,6 @@
 from collections import namedtuple
 from PIL import Image
-from definitions import Buf_2d_rgb, Buf_2d_buffers_of_2d_rgb, Offset, Size
+from definitions import Offset, Size, BlockRGB, BlocksRGB
 
 
 Composition = namedtuple('Composition', ['size', 'parts'])
@@ -22,15 +22,16 @@ class LazyRenderer(object):
         return self._fn(self._state)
 
 
-def rgb_2d_to_bytes(data):
+def rgb_block_to_bytes(block):
     """Converts a two-dimensional array of
     RGB pixels to a one-dimensional bytearray
     """
-    size_in_bytes = len(data) * len(data[0]) * 3
+    size = block.size
+    size_in_bytes = size.cy * size.cx * 3
     pixels = bytearray(size_in_bytes)
 
     i = 0
-    for row in data:
+    for row in block.rows:
         for pixel in row:
             pixels[i] = pixel.r
             i = i + 1
@@ -41,12 +42,10 @@ def rgb_2d_to_bytes(data):
     return pixels
 
 
-def rgb_2d_to_image(buf):
-    data = buf.data
-    height = len(data)
-    width = len(data[0])
-    pixels = rgb_2d_to_bytes(data)
-    image = Image.frombytes('RGB', (width, height), buffer(pixels))
+def rgb_block_to_image(block):
+    pixels = rgb_block_to_bytes(block)
+    image = Image.frombytes(
+        'RGB', (block.size.cx, block.size.cy), buffer(pixels))
 
     return image
 
@@ -63,24 +62,25 @@ def compose_image(composition):
     return image
 
 
-def buffer_of_rgb_2d_to_image(buf):
+def rgb_blocks_to_image(blocks):
     padding_y = 5
     padding_x = 5
     cy = padding_y
     cx = padding_x
+    rows = blocks.rows
 
     # Collect and position parts
     parts = []
-    for row in buf.data:
+    for row in rows:
         row_cy = 0
         x = padding_x
-        for buf in row:
-            size = buf.size
+        for block in row:
+            size = block.size
             offset = Offset(x, cy)
             x = x + size.cx + padding_x
 
             get_image = LazyRenderer(
-                state=buf, fn=rgb_2d_to_image)
+                state=block, fn=rgb_block_to_image)
 
             part = Part(size, offset, get_image)
             parts.append(part)
@@ -98,22 +98,22 @@ def buffer_of_rgb_2d_to_image(buf):
 
 
 _visualizers = {
-    Buf_2d_rgb: rgb_2d_to_image,
-    Buf_2d_buffers_of_2d_rgb: buffer_of_rgb_2d_to_image
+    BlockRGB.__name__: rgb_block_to_image,
+    BlocksRGB.__name__: rgb_blocks_to_image
 }
 
 
-def get_visualizer(buff, get_custom_visualizer=None):
-    visualizer = get_custom_visualizer(buff) if get_custom_visualizer else None
+def get_visualizer(buf, get_custom_visualizer=None):
+    visualizer = get_custom_visualizer(buf) if get_custom_visualizer else None
     if not visualizer:
-        visualizer = _visualizers.get(buff.format)
+        visualizer = _visualizers.get(buf.__class__.__name__)
 
     return visualizer
 
 
-def buf(b, get_custom_visualizer=None):
-    visualizer = get_visualizer(b, get_custom_visualizer)
+def it(buf, get_custom_visualizer=None):
+    visualizer = get_visualizer(buf, get_custom_visualizer)
     if not visualizer:
-        raise Exception("Visualizer for buf: '%s' not found." % b)
+        raise Exception("Visualizer for buffer: '%s' not found." % buf)
 
-    return visualizer(b)
+    return visualizer(buf)

@@ -4,7 +4,7 @@ import os
 import source
 import slice
 import visualize
-from definitions import Size
+from definitions import Size, Area
 
 
 def _get_source_from_file():
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     image_source = _get_source_from_file()
 
     # Pipeline start
-    sliced = slice.source(image_source, Size(16, 16, 'pixel'))
-    image = visualize.buf(sliced)
-    image.show()
-
+    rgb_blocks = slice.source(image_source, Size(16, 16, 'pixel'), Area(25, 8, 20, 20, 'block'))
+    rgb_block = rgb_blocks.rows[2][9]
+    visualize.it(rgb_blocks).show()
+    visualize.it(rgb_block).show()

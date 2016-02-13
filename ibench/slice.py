@@ -1,5 +1,4 @@
-from buf import Buf
-from definitions import Size, Area, Buf_2d_rgb, Buf_2d_buffers_of_2d_rgb
+from definitions import Size, Area, BlockRGB, BlocksRGB
 
 
 def _get_size_in_blocks(block_size, size_in_pixels):
@@ -12,34 +11,22 @@ def _get_size_in_blocks(block_size, size_in_pixels):
     return size_in_blocks
 
 
-def source(
-        source, block_size, block_area=None):
-    blocked_size = _get_size_in_blocks(
+def source(source, block_size, source_area=None):
+    source_size = _get_size_in_blocks(
         block_size, source.get_size_in_pixels())
-    block_area = block_area if block_area else Area(0, 0, blocked_size.cx, blocked_size.cy, 'block')
-    blocks = []
+    source_area = source_area if source_area else Area(0, 0, source_size.cx, source_size.cy, 'block')
+    block_rows = []
 
-    y = block_area.y * block_size.cy
-    for block_y in range(block_area.y, block_area.y + block_area.cy):
-        line = []
-        x = block_area.x * block_size.cx
-        for block_x in range(block_area.x, block_area.x + block_area.cx):
-            pixels = source.get_rgb_pixels(
-                x, y, block_size)
+    y = source_area.y * block_size.cy
+    for block_y in range(source_area.y, source_area.y + source_area.cy):
+        row = []
+        x = source_area.x * block_size.cx
+        for block_x in range(source_area.x, source_area.x + source_area.cx):
+            rows = source.get_rgb_pixels(x, y, block_size)
             x = x + block_size.cx
-            block_buf = Buf(
-                data=pixels,
-                format=Buf_2d_rgb,
-                size=Size(cx=block_size.cx, cy=block_size.cy, unit='pixel'),
-                label='Block %s:%s' % (block_x, block_y))
-            line.append(block_buf)
-        blocks.append(line)
+            block = BlockRGB(size=block_size, rows=rows)
+            row.append(block)
+        block_rows.append(row)
         y = y + block_size.cy
 
-    buf = Buf(
-        data=blocks,
-        format=Buf_2d_buffers_of_2d_rgb,
-        size=blocked_size,
-        label='Blocks %sx%s' % (blocked_size.cx, blocked_size.cy))
-
-    return buf
+    return BlocksRGB(Size(source_area.cx, source_area.cy, 'block'), block_rows)
