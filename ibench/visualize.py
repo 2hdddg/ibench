@@ -1,25 +1,6 @@
-from collections import namedtuple
 from PIL import Image
-from definitions import Offset, Size, BlockRGB, BlocksRGB
-
-
-Composition = namedtuple('Composition', ['size', 'parts'])
-Part = namedtuple('Part', ['size', 'offset', 'get_image'])
-
-
-class LazyRenderer(object):
-    """A keeper of state and
-    the actual to make in the future
-    to render an image.
-    Just to reduce amount of memory
-    used simultanously
-    """
-    def __init__(self, state, fn):
-        self._state = state
-        self._fn = fn
-
-    def __call__(self):
-        return self._fn(self._state)
+from definitions import Size, BlockRGB, BlocksRGB
+from layout import LazyRenderer, fixed_grid, compose_image
 
 
 def rgb_block_to_bytes(block):
@@ -50,49 +31,17 @@ def rgb_block_to_image(block):
     return image
 
 
-def compose_image(composition):
-    image_size = (composition.size.cx, composition.size.cy)
-    image = Image.new('RGB', image_size)
-
-    for part in composition.parts:
-        part_image = part.get_image()
-        part_box = (part.offset.x, part.offset.y)
-        image.paste(part_image, part_box)
-
-    return image
-
-
 def rgb_blocks_to_image(blocks):
-    padding_y = 5
-    padding_x = 5
-    cy = padding_y
-    cx = padding_x
-    rows = blocks.rows
+    def get_cell_renderer(row, col):
+        block = blocks.rows[row][col]
+        return LazyRenderer(state=block, fn=rgb_block_to_image)
 
-    # Collect and position parts
-    parts = []
-    for row in rows:
-        row_cy = 0
-        x = padding_x
-        for block in row:
-            size = block.size
-            offset = Offset(x, cy)
-            x = x + size.cx + padding_x
+    padding = Size(5, 5, 'pixel')
+    cell_size = blocks.rows[0][0].size
+    grid_composition = fixed_grid(
+        blocks.size, padding, cell_size, get_cell_renderer)
 
-            get_image = LazyRenderer(
-                state=block, fn=rgb_block_to_image)
-
-            part = Part(size, offset, get_image)
-            parts.append(part)
-            # Calculate max height in row
-            row_cy = max([row_cy, size.cy])
-
-        cx = max([cx, x])
-        cy = cy + row_cy + padding_y
-
-    composition = Composition(Size(cx, cy, 'pixel'), parts)
-
-    image = compose_image(composition)
+    image = compose_image(grid_composition)
 
     return image
 
