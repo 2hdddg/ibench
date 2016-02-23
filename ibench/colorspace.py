@@ -1,4 +1,4 @@
-from definitions import YCbCr, PlaneYCbCr
+from definitions import YCbCr, PlaneYCbCr, RGB
 
 # Standard for television
 Kb = 0.114
@@ -44,3 +44,21 @@ def blockRgb_to_planeYCbCr(block):
             cr[-1].append(yCbCr.cr)
 
     return PlaneYCbCr(block.size, y, cb, cr)
+
+
+def y_to_rgb(y):
+    r = g = b = int(y * 255)
+
+    return RGB(r, g, b)
+
+
+def cb_to_rgb(cb):
+    b = int((cb + 0.5) * 255)
+
+    return RGB(0, 0, b)
+
+
+def cr_to_rgb(cb):
+    r = int((cb + 0.5) * 255)
+
+    return RGB(r, 0, 0)

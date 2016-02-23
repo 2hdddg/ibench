@@ -1,30 +1,23 @@
 from PIL import Image
 from definitions import Size, BlockRGB, BlocksRGB, PlaneYCbCr
 from layout import LazyRenderer, fixed_grid, compose_image
+from colorspace import y_to_rgb, cb_to_rgb, cr_to_rgb
 
 
-def rgb_block_to_bytes(block):
+def _rgb_block_to_bytes(block):
     """Converts a two-dimensional array of
     RGB pixels to a one-dimensional bytearray
     """
-    size = block.size
-    size_in_bytes = size.cy * size.cx * 3
-    pixels = bytearray(size_in_bytes)
+    pixels = bytearray()
 
-    i = 0
     for row in block.rows:
         for pixel in row:
-            pixels[i] = pixel.r
-            i = i + 1
-            pixels[i] = pixel.g
-            i = i + 1
-            pixels[i] = pixel.b
-            i = i + 1
+            pixels.extend(pixel)
     return pixels
 
 
 def rgb_block_to_image(block):
-    pixels = rgb_block_to_bytes(block)
+    pixels = _rgb_block_to_bytes(block)
     image = Image.frombytes(
         'RGB', (block.size.cx, block.size.cy), buffer(pixels))
 
@@ -46,40 +39,28 @@ def rgb_blocks_to_image(blocks):
     return image
 
 
-def y_to_image(plane):
-    size = plane.size
-    size_in_bytes = size.cy * size.cx * 3
-    pixels = bytearray(size_in_bytes)
+def _build_x_to_image(size, rows, x_to_rgb):
 
-    i = 0
-    for row in plane.y:
-        for y in row:
-            pixels[i] = int(y * 255)
-            i = i + 1
-            pixels[i] = int(y * 255)
-            i = i + 1
-            pixels[i] = int(y * 255)
-            i = i + 1
+    def x_to_image():
+        pixels = bytearray()
+        for row in rows:
+            for x in row:
+                rgb = x_to_rgb(x)
+                pixels.extend(rgb)
 
-    image = Image.frombytes(
-        'RGB', (plane.size.cx, plane.size.cy), buffer(pixels))
+        image = Image.frombytes(
+            'RGB', (size.cx, size.cy), buffer(pixels))
 
-    return image
+        return image
 
-
-def cb_to_image(plane):
-    return y_to_image(plane)
-
-
-def cr_to_image(plane):
-    return y_to_image(plane)
+    return x_to_image
 
 
 def ycbcr_plane_to_image(plane):
     renderers = [
-        LazyRenderer(state=plane, fn=y_to_image),
-        LazyRenderer(state=plane, fn=cb_to_image),
-        LazyRenderer(state=plane, fn=cr_to_image)
+        _build_x_to_image(plane.size, plane.y, y_to_rgb),
+        _build_x_to_image(plane.size, plane.cb, cb_to_rgb),
+        _build_x_to_image(plane.size, plane.cr, cr_to_rgb)
     ]
 
     def get_cell_renderer(row, col):
@@ -100,16 +81,12 @@ _visualizers = {
 }
 
 
-def get_visualizer(buf, get_custom_visualizer=None):
-    visualizer = get_custom_visualizer(buf) if get_custom_visualizer else None
-    if not visualizer:
-        visualizer = _visualizers.get(buf.__class__.__name__)
-
-    return visualizer
+def _get_visualizer(buf):
+    return _visualizers.get(buf.__class__.__name__)
 
 
 def it(buf, get_custom_visualizer=None):
-    visualizer = get_visualizer(buf, get_custom_visualizer)
+    visualizer = get_custom_visualizer(buf) if get_custom_visualizer else _get_visualizer(buf)
     if not visualizer:
         raise Exception("Visualizer for: '%s' not found." % str(buf.__class__))
 
