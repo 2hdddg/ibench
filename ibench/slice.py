@@ -12,6 +12,11 @@ def _get_size_in_blocks(block_size, size_in_pixels):
 
 
 def source(source, block_size, source_area=None):
+    """Splits a source into blocks of RGB
+    source - implements: get_size_in_pixels, get_rgb_pixels
+    block_size - requested size in pixels of each block
+    source_area - optionally split only a part of the source
+    """
     source_size = _get_size_in_blocks(
         block_size, source.get_size_in_pixels())
     source_area = source_area if source_area else Area(0, 0, source_size.cx, source_size.cy, 'block')

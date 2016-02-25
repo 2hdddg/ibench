@@ -1,46 +1,15 @@
 from PIL import Image
 from definitions import Size, BlockRGB, BlocksRGB, PlaneYCbCr
-from layout import LazyRenderer, fixed_grid, compose_image
+from layout import fixed_grid, compose_image
 from colorspace import y_to_rgb, cb_to_rgb, cr_to_rgb
 
 
-def _rgb_block_to_bytes(block):
-    """Converts a two-dimensional array of
-    RGB pixels to a one-dimensional bytearray
-    """
-    pixels = bytearray()
-
-    for row in block.rows:
-        for pixel in row:
-            pixels.extend(pixel)
-    return pixels
-
-
-def rgb_block_to_image(block):
-    pixels = _rgb_block_to_bytes(block)
-    image = Image.frombytes(
-        'RGB', (block.size.cx, block.size.cy), buffer(pixels))
-
-    return image
-
-
-def rgb_blocks_to_image(blocks):
-    def get_cell_renderer(row, col):
-        block = blocks.rows[row][col]
-        return LazyRenderer(state=block, fn=rgb_block_to_image)
-
-    padding = Size(5, 5, 'pixel')
-    cell_size = blocks.rows[0][0].size
-    grid_composition = fixed_grid(
-        blocks.size, padding, cell_size, get_cell_renderer)
-
-    image = compose_image(grid_composition)
-
-    return image
-
-
 def _build_x_to_image(size, rows, x_to_rgb):
-
+    """ Returns a function that can build an
+    image using x_to_rgb conversion function.
+    Returned function is bound to params and
+    needs no params itself.
+    """
     def x_to_image():
         pixels = bytearray()
         for row in rows:
@@ -54,6 +23,27 @@ def _build_x_to_image(size, rows, x_to_rgb):
         return image
 
     return x_to_image
+
+
+def rgb_block_to_image(block):
+    return _build_x_to_image(
+        block.size, block.rows, lambda x: x)()
+
+
+def rgb_blocks_to_image(blocks):
+    def get_cell_renderer(row, col):
+        block = blocks.rows[row][col]
+        return _build_x_to_image(
+                block.size, block.rows, lambda x: x)
+
+    padding = Size(5, 5, 'pixel')
+    cell_size = blocks.rows[0][0].size
+    grid_composition = fixed_grid(
+        blocks.size, padding, cell_size, get_cell_renderer)
+
+    image = compose_image(grid_composition)
+
+    return image
 
 
 def ycbcr_plane_to_image(plane):

@@ -3,23 +3,8 @@ from PIL import Image
 
 from definitions import Offset, Size
 
-Composition = namedtuple('Composition', ['size', 'parts'])
 Part = namedtuple('Part', ['size', 'offset', 'get_image'])
-
-
-class LazyRenderer(object):
-    """A keeper of state and
-    actual render function to call in the
-    future to render an image.
-    Just to reduce amount of memory
-    used simultanously
-    """
-    def __init__(self, state, fn):
-        self._state = state
-        self._fn = fn
-
-    def __call__(self):
-        return self._fn(self._state)
+Composition = namedtuple('Composition', ['size', 'parts'])
 
 
 def compose_image(composition):
