@@ -32,8 +32,8 @@ def fixed_grid(grid_size, padding_size, cell_size, get_renderer):
         y = y + cell_size.cy + padding_size.cy
 
     image_size = Size(
-        grid_size.cx * (cell_size.cx + padding_size.cx),
-        grid_size.cy * (cell_size.cy + padding_size.cy),
+        (grid_size.cx * (cell_size.cx + padding_size.cx)) + padding_size.cx,
+        (grid_size.cy * (cell_size.cy + padding_size.cy)) + padding_size.cy,
         'pixel')
     composition = Composition(image_size, parts)
 

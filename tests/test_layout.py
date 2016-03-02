@@ -30,8 +30,7 @@ class TestFixedGrid(TestCase):
         self.assertEqual((size.cx, size.cy), (3, 3))
         self.assertEqual(composition.size.unit, 'pixel')
 
-    def test_padding_offset(self):
-        # Offset in first part
+    def test_padding_offset_of_first_part(self):
         grid = Size(1, 1, 'block')
         padding = Size(2, 3, 'pixel')
         cell = Size(1, 1, 'pixel')
@@ -41,8 +40,7 @@ class TestFixedGrid(TestCase):
         part = composition.parts[0]
         self.assertEqual((part.offset.x, part.offset.y), (2, 3))
 
-    def test_padding(self):
-        # Offset between parts
+    def test_padding_between_parts(self):
         grid = Size(2, 2, 'block')
         padding = Size(2, 3, 'pixel')
         cell = Size(1, 1, 'pixel')
@@ -54,6 +52,21 @@ class TestFixedGrid(TestCase):
         x_between = bottomright_part.offset.x - topleft_part.size.cx - topleft_part.offset.x
         y_between = bottomright_part.offset.y - topleft_part.size.cy - topleft_part.offset.y
         self.assertEqual((x_between, y_between), (2, 3))
+
+    def test_padding_offset_of_last_part(self):
+        grid = Size(1, 1, 'block')
+        padding = Size(2, 3, 'pixel')
+        cell = Size(1, 1, 'pixel')
+
+        composition = fixed_grid(grid, padding, cell, _dummy_renderer)
+
+        part = composition.parts[0]
+        part_end_x = part.offset.x + part.size.cx
+        part_end_y = part.offset.y + part.size.cy
+        left_x = composition.size.cx - part_end_x
+        left_y = composition.size.cy - part_end_y
+        self.assertEqual(left_x, padding.cx)
+        self.assertEqual(left_y, padding.cy)
 
 
 class TestCompositionSmoke(TestCase):
