@@ -21,6 +21,4 @@ if __name__ == "__main__":
     rgb_blocks = slice.source(image_source, Size(16, 16, 'pixel'), Area(25, 8, 20, 20, 'block'))
     rgb_block = rgb_blocks.rows[2][9]
     ycbcr_plane = colorspace.blockRgb_to_planeYCbCr(rgb_block)
-    visualize.it(ycbcr_plane).show()
-    #visualize.it(rgb_blocks).show()
-    #visualize.it(rgb_block).show()
+    visualize.ycbcr_plane_to_image(ycbcr_plane, zoom=3).show()

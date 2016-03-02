@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import unittest
 
-from ibench.visualize import it, rgb_block_to_image, rgb_blocks_to_image, ycbcr_plane_to_image
+from ibench.visualize import rgb_block_to_image, rgb_blocks_to_image, ycbcr_plane_to_image
 import PIL
 
 from .samples import random_rgb_block, random_rgb_blocks, random_ycbcr_plane
@@ -29,27 +29,3 @@ class TestVisualizeSmoke(unittest.TestCase):
 
         self.assertIsInstance(image, PIL.Image.Image)
 
-
-class TestVisualizeIt(unittest.TestCase):
-    def test_visualize_rgb_block(self):
-        image = it(random_rgb_block)
-
-        self.assertIsInstance(image, PIL.Image.Image)
-
-    def test_visualize_rgb_blocks(self):
-        image = it(random_rgb_blocks)
-
-        self.assertIsInstance(image, PIL.Image.Image)
-
-    def test_visualize_ycbr_plane(self):
-        image = it(random_ycbcr_plane)
-
-        self.assertIsInstance(image, PIL.Image.Image)
-
-    def test_custom_visualizer(self):
-        def get_custom(buf):
-            return lambda b: "from custom"
-
-        image = it(random_rgb_blocks, get_custom_visualizer=get_custom)
-
-        self.assertEqual(image, "from custom")
