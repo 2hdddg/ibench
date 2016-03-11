@@ -26,6 +26,13 @@ def _get_random_rgb(size):
     return _x_of_size(size, _rand_rgb)
 
 
+def get_random_ycbcr_plane(size):
+    return PlaneYCbCr(
+        size,
+        y=_x_of_size(size, _rand_y),
+        cb=_x_of_size(size, _rand_cb_cr),
+        cr=_x_of_size(size, _rand_cb_cr))
+
 _4x4_pixels = Size(4, 4, 'pixel')
 _3x3_blocks = Size(3, 3, 'block')
 
@@ -35,11 +42,7 @@ random_rgb_blocks = BlocksRGB(
     _3x3_blocks,
     _x_of_size(_3x3_blocks, lambda: random_rgb_block))
 
-random_ycbcr_plane = PlaneYCbCr(
-    _4x4_pixels,
-    y=_x_of_size(_4x4_pixels, _rand_y),
-    cb=_x_of_size(_4x4_pixels, _rand_cb_cr),
-    cr=_x_of_size(_4x4_pixels, _rand_cb_cr))
+random_ycbcr_plane = get_random_ycbcr_plane(_4x4_pixels)
 
 
 def _get_image():
