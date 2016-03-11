@@ -19,13 +19,13 @@ def compose_image(composition):
     return image
 
 
-def fixed_grid(grid_size, padding_size, cell_size, get_renderer):
+def fixed_grid(grid_size, padding_size, cell_size, get_cell_renderer):
     parts = []
     y = padding_size.cy
     for row in xrange(grid_size.cy):
         x = padding_size.cx
         for col in xrange(grid_size.cx):
-            renderer = get_renderer(row, col)
+            renderer = get_cell_renderer(row, col)
             part = Part(cell_size, Offset(x, y), renderer)
             parts.append(part)
             x = x + cell_size.cx + padding_size.cx
